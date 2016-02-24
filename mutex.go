@@ -15,6 +15,7 @@ const (
 	defaultTry = 3
 )
 
+// A Mutex is a mutual exclusion lock which is distributed across a cluster.
 type Mutex struct {
 	key    string
 	id     string
@@ -24,6 +25,10 @@ type Mutex struct {
 	mutex  *sync.Mutex
 }
 
+// New creates a Mutex with the given key which must be the same
+// across the cluster nodes.
+// id is the identity of the caller.
+// machines are the ectd cluster addresses
 func New(key string, id string, machines []string) *Mutex {
 	cfg := client.Config{
 		Endpoints:               machines,
@@ -46,6 +51,9 @@ func New(key string, id string, machines []string) *Mutex {
 	}
 }
 
+// Lock locks m.
+// If the lock is already in use, the calling goroutine
+// blocks until the mutex is available.
 func (m *Mutex) Lock() (err error) {
 	m.mutex.Lock()
 	for try := 1; try <= defaultTry; try++ {
@@ -91,7 +99,12 @@ func (m *Mutex) Lock() (err error) {
 	return err
 }
 
-// Unlock
+// Unlock unlocks m.
+// It is a run-time error if m is not locked on entry to Unlock.
+//
+// A locked Mutex is not associated with a particular goroutine.
+// It is allowed for one goroutine to lock a Mutex and then
+// arrange for another goroutine to unlock it.
 func (m *Mutex) Unlock() (err error) {
 	defer m.mutex.Unlock()
 	for i := 1; i <= defaultTry; i++ {
