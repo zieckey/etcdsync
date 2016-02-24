@@ -8,6 +8,7 @@ A distributed lock library in Go using etcd. It easy to use like sync.Mutex.
 ## Simplest usage
 
 Steps:
+
 1. m := etcdsync.New()
 2. m.Lock()
 3. Do your business here
