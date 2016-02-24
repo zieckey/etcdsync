@@ -1,5 +1,11 @@
 # go-etcd-lock
+
 A distributed lock library in Go using etcd. It easy to use like sync.Mutex.
+
+
+In fact, there are many similar implementation, but which are all obsolete 
+depending on library `github.com/coreos/go-etcd/etcd` which is official marked `deprecated`.
+And the usage is a little bit complicated.
 
 ## Import
     
