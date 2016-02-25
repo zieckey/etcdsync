@@ -4,8 +4,9 @@ A distributed lock library in Go using etcd. It easy to use like sync.Mutex.
 
 
 In fact, there are many similar implementation, but which are all obsolete 
-depending on library `github.com/coreos/go-etcd/etcd` which is official marked `deprecated`.
-And the usage is a little bit complicated.
+depending on library `github.com/coreos/go-etcd/etcd` which is official marked `deprecated`,
+and the usage is a little bit complicated. 
+Otherwise this library is very very simple. The usage is simple, the code is simple.
 
 ## Import
     
@@ -57,4 +58,5 @@ func main() {
 
 You need a etcd instance running on localhost:2379, then:
 
- go test
+    go test
+    
