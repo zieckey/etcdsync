@@ -8,14 +8,10 @@ import (
 	"time"
 )
 
-func init() {
-	debug = true
-}
-
 func TestMutex(t *testing.T) {
 	log.SetFlags(log.Ltime|log.Ldate|log.Lshortfile)
 	key := "/etcdsync"
-	m := New(key, "100", []string{"http://127.0.0.1:2379"})
+	m := New(key, 60, []string{"http://127.0.0.1:2379"})
 	if m == nil {
 		t.Errorf("New Mutex ERROR")
 	}
@@ -43,12 +39,11 @@ func TestMutex(t *testing.T) {
 
 
 func TestLockConcurrently(t *testing.T) {
-	log.Println("\n\n")
 	slice := make([]int, 0, 3)
 	lockKey := "/etcd_sync"
-	m1 := New(lockKey, "1", []string{"http://127.0.0.1:2379"})
-	m2 := New(lockKey, "2", []string{"http://127.0.0.1:2379"})
-	m3 := New(lockKey, "3", []string{"http://127.0.0.1:2379"})
+	m1 := New(lockKey, 60, []string{"http://127.0.0.1:2379"})
+	m2 := New(lockKey, 60, []string{"http://127.0.0.1:2379"})
+	m3 := New(lockKey, 60, []string{"http://127.0.0.1:2379"})
 	if m1 == nil || m2 == nil || m3 == nil {
 		t.Errorf("New Mutex ERROR")
 	}
@@ -61,26 +56,22 @@ func TestLockConcurrently(t *testing.T) {
 			m3.Lock()
 			slice = append(slice, 2)
 			m3.Unlock()
-			log.Println("\n\n")
 			ch2 <- true
 		}()
 		slice = append(slice, 1)
 		time.Sleep(1 * time.Second)
 		m2.Unlock()
-		log.Println("\n\n")
 		<-ch2
 		ch1 <- true
 	}()
 	slice = append(slice, 0)
 	time.Sleep(1 * time.Second)
 	m1.Unlock()
-	log.Println("\n\n")
 	<-ch1
 	if len(slice) != 3 {
 		t.Fail()
 	}
 	for n, i := range slice {
-		println("n,i:", n, i)
 		if n != i {
 			t.Fail()
 		}

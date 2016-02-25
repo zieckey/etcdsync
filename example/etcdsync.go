@@ -6,11 +6,11 @@ import (
 )
 
 func main() {
-	//etcdsync.SetDebug(true)
 	log.SetFlags(log.Ldate|log.Ltime|log.Lshortfile)
-	m := etcdsync.New("/etcdsync", "123", []string{"http://127.0.0.1:2379"})
+	m := etcdsync.New("/mylock", 10, []string{"http://127.0.0.1:2379"})
+	m.SetDebug(true)
 	if m == nil {
-		log.Printf("etcdsync.NewMutex failed")
+		log.Printf("etcdsync.New failed")
 	}
 	err := m.Lock()
 	if err != nil {
@@ -21,10 +21,10 @@ func main() {
 
 	log.Printf("Get the lock. Do something here.")
 
-	err = m.Unlock()
-	if err != nil {
-		log.Printf("etcdsync.Unlock failed")
-	} else {
-		log.Printf("etcdsync.Unlock OK")
-	}
+//	err = m.Unlock()
+//	if err != nil {
+//		log.Printf("etcdsync.Unlock failed")
+//	} else {
+//		log.Printf("etcdsync.Unlock OK")
+//	}
 }
