@@ -2,7 +2,7 @@ package etcdsync
 
 import (
 	"fmt"
-	"log"
+	"io"
 	"os"
 	"sync"
 	"time"
@@ -27,7 +27,7 @@ type Mutex struct {
 	ctx    context.Context
 	ttl    time.Duration
 	mutex  *sync.Mutex
-	debug  bool
+	logger io.Writer
 }
 
 // New creates a Mutex with the given key which must be the same
@@ -70,7 +70,6 @@ func New(key string, ttl int, machines []string) *Mutex {
 		ctx: context.TODO(),
 		ttl: time.Second * time.Duration(ttl),
 		mutex:  new(sync.Mutex),
-		debug: false,
 	}
 }
 
@@ -83,9 +82,9 @@ func (m *Mutex) Lock() (err error) {
 		if m.lock() == nil {
 			return nil
 		} else {
-			m.debugf("Lock node %v ERROR %v", m.key, err)
+			m.debug("Lock node %v ERROR %v", m.key, err)
 			if try < defaultTry {
-				m.debugf("Try to lock node %v again", m.key, err)
+				m.debug("Try to lock node %v again", m.key, err)
 			}
 		}
 	}
@@ -93,17 +92,17 @@ func (m *Mutex) Lock() (err error) {
 }
 
 func (m *Mutex) lock() (err error) {
-	m.debugf("Tryint to create a node : key=%v", m.key)
+	m.debug("Trying to create a node : key=%v", m.key)
 	setOptions := &client.SetOptions{
 		PrevExist:client.PrevNoExist,
 		TTL:      m.ttl,
 	}
 	resp, err := m.kapi.Set(m.ctx, m.key, m.id, setOptions)
 	if err == nil {
-		m.debugf("Create node %v OK [%q]", m.key, resp)
+		m.debug("Create node %v OK [%q]", m.key, resp)
 		return nil
 	}
-	m.debugf("Create node %v failed [%v]", m.key, err)
+	m.debug("Create node %v failed [%v]", m.key, err)
 	e, ok := err.(client.Error)
 	if !ok {
 		return err
@@ -118,20 +117,20 @@ func (m *Mutex) lock() (err error) {
 	if err != nil {
 		return err
 	}
-	m.debugf("Get node %v OK", m.key)
+	m.debug("Get node %v OK", m.key)
 	watcherOptions := &client.WatcherOptions{
 		AfterIndex : resp.Index,
 		Recursive:false,
 	}
 	watcher := m.kapi.Watcher(m.key, watcherOptions)
 	for {
-		m.debugf("Watching %v ...", m.key)
+		m.debug("Watching %v ...", m.key)
 		resp, err = watcher.Next(m.ctx)
 		if err != nil {
 			return err
 		}
 
-		m.debugf("Received an event : %q", resp)
+		m.debug("Received an event : %q", resp)
 		if resp.Action == deleteAction || resp.Action == expireAction {
 			return nil
 		}
@@ -151,26 +150,29 @@ func (m *Mutex) Unlock() (err error) {
 		var resp *client.Response
 		resp, err = m.kapi.Delete(m.ctx, m.key, nil)
 		if err != nil {
-			m.debugf("Delete %v falied: %q", m.key, resp)
+			m.debug("Delete %v falied: %q", m.key, resp)
 			if _, ok := err.(client.Error); !ok {
 				// retry.
 				continue
 			}
 		} else {
-			m.debugf("Delete %v OK", m.key)
+			m.debug("Delete %v OK", m.key)
 		}
 		break
 	}
 	return
 }
 
-func (m *Mutex) debugf(format string, v ...interface{}) {
-	if m.debug {
-		log.Output(2, m.id + " " + fmt.Sprintf(format, v...))
+func (m *Mutex) debug(format string, v ...interface{}) {
+	if m.logger != nil {
+		m.logger.Write([]byte(m.id))
+		m.logger.Write([]byte(" "))
+		m.logger.Write([]byte(fmt.Sprintf(format, v...)))
+		m.logger.Write([]byte("\n"))
 	}
 }
 
-func (m *Mutex)SetDebug(flag bool) {
-	m.debug = flag
+func (m *Mutex) SetDebugLogger(w io.Writer) {
+	m.logger = w
 }
 
