@@ -81,11 +81,11 @@ func (m *Mutex) Lock() (err error) {
 	for try := 1; try <= defaultTry; try++ {
 		if m.lock() == nil {
 			return nil
-		} else {
-			m.debug("Lock node %v ERROR %v", m.key, err)
-			if try < defaultTry {
-				m.debug("Try to lock node %v again", m.key, err)
-			}
+		}
+		
+		m.debug("Lock node %v ERROR %v", m.key, err)
+		if try < defaultTry {
+			m.debug("Try to lock node %v again", m.key, err)
 		}
 	}
 	return err
@@ -151,7 +151,11 @@ func (m *Mutex) Unlock() (err error) {
 		resp, err = m.kapi.Delete(m.ctx, m.key, nil)
 		if err != nil {
 			m.debug("Delete %v falied: %q", m.key, resp)
-			if _, ok := err.(client.Error); !ok {
+			if e, ok := err.(client.Error); ok {
+				if e.Code == client.ErrorCodeKeyNotFound {
+					return nil
+				}
+			} else {
 				// retry.
 				continue
 			}
