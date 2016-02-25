@@ -32,8 +32,6 @@ func TestMutex(t *testing.T) {
 		t.Errorf("Get key %v failed from etcd", key)
 	} else if e.Code != client.ErrorCodeKeyNotFound {
 		t.Errorf("ERROR %v", err)
-	} else {
-		println("test OK")
 	}
 }
 
@@ -71,6 +69,27 @@ func TestLockConcurrently(t *testing.T) {
 	if len(slice) != 3 {
 		t.Fail()
 	}
+	for n, i := range slice {
+		if n != i {
+			t.Fail()
+		}
+	}
+}
+
+func TestLockTimeout(t *testing.T) {
+	slice := make([]int, 0, 2)
+	m1 := New("key", 2, []string{"http://127.0.0.1:2379"})
+	m2 := New("key", 2, []string{"http://127.0.0.1:2379"})
+	m1.Lock()
+	ch := make(chan bool)
+	go func() {
+		m2.Lock()
+		slice = append(slice, 1)
+		m2.Unlock()
+		ch <- true
+	}()
+	slice = append(slice, 0)
+	<-ch
 	for n, i := range slice {
 		if n != i {
 			t.Fail()
