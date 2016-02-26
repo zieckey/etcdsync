@@ -1,16 +1,16 @@
-# go-etcd-lock
+# etcdsync
 
-A distributed lock library in Go using etcd. It easy to use like sync.Mutex.
+etcdsync is a distributed lock library in Go using etcd. It easy to use like sync.Mutex.
 
 
-In fact, there are many similar implementation, but which are all obsolete 
+In fact, there are many similar implementation which are all obsolete 
 depending on library `github.com/coreos/go-etcd/etcd` which is official marked `deprecated`,
 and the usage is a little bit complicated. 
 Otherwise this library is very very simple. The usage is simple, the code is simple.
 
 ## Import
     
-    go get github.com/zieckey/go-etcd-lock
+    go get github.com/zieckey/etcdsync
 
 ## Simplest usage
 
@@ -27,13 +27,13 @@ package main
 import (
 	"github.com/zieckey/go-etcd-lock"
 	"log"
+	"os"
 )
 
 func main() {
-	log.SetFlags(log.Ldate|log.Ltime|log.Lshortfile)
-	m := etcdsync.New("/etcdsync", "123", []string{"http://127.0.0.1:2379"})
+	m := etcdsync.New("/mylock", 10, []string{"http://127.0.0.1:2379"})
 	if m == nil {
-		log.Printf("etcdsync.NewMutex failed")
+		log.Printf("etcdsync.New failed")
 	}
 	err := m.Lock()
 	if err != nil {
@@ -51,7 +51,6 @@ func main() {
 		log.Printf("etcdsync.Unlock OK")
 	}
 }
-
 ```
 
 ## Test

@@ -149,22 +149,17 @@ func (m *Mutex) Unlock() (err error) {
 	for i := 1; i <= defaultTry; i++ {
 		var resp *client.Response
 		resp, err = m.kapi.Delete(m.ctx, m.key, nil)
-		if err != nil {
-			m.debug("Delete %v falied: %q", m.key, resp)
-			if e, ok := err.(client.Error); ok {
-				if e.Code == client.ErrorCodeKeyNotFound {
-					return nil
-				}
-			} else {
-				// retry.
-				continue
-			}
-		} else {
+		if err == nil {
 			m.debug("Delete %v OK", m.key)
+			return nil
 		}
-		break
+		m.debug("Delete %v falied: %q", m.key, resp)
+		e, ok := err.(client.Error)
+		if ok && e.Code == client.ErrorCodeKeyNotFound {
+			return nil
+		}
 	}
-	return
+	return err
 }
 
 func (m *Mutex) debug(format string, v ...interface{}) {
