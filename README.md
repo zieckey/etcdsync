@@ -25,9 +25,10 @@ Steps:
 package main
 
 import (
-	"github.com/zieckey/go-etcd-lock"
 	"log"
 	"os"
+
+	"github.com/zieckey/etcdsync"
 )
 
 func main() {
@@ -51,11 +52,12 @@ func main() {
 		log.Printf("etcdsync.Unlock OK")
 	}
 }
+
 ```
 
 ## Test
 
-You need a etcd instance running on localhost:2379, then:
+You need a etcd instance running on http://localhost:2379, then:
 
     go test
     
