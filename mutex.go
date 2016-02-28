@@ -98,45 +98,48 @@ func (m *Mutex) lock() (err error) {
 		PrevExist:client.PrevNoExist,
 		TTL:      m.ttl,
 	}
-	resp, err := m.kapi.Set(m.ctx, m.key, m.id, setOptions)
-	if err == nil {
-		m.debug("Create node %v OK [%q]", m.key, resp)
-		return nil
-	}
-	m.debug("Create node %v failed [%v]", m.key, err)
-	e, ok := err.(client.Error)
-	if !ok {
-		return err
-	}
-
-	if e.Code != client.ErrorCodeNodeExist {
-		return err
-	}
-
-	// Get the already node's value.
-	resp, err = m.kapi.Get(m.ctx, m.key, nil)
-	if err != nil {
-		return err
-	}
-	m.debug("Get node %v OK", m.key)
-	watcherOptions := &client.WatcherOptions{
-		AfterIndex : resp.Index,
-		Recursive:false,
-	}
-	watcher := m.kapi.Watcher(m.key, watcherOptions)
 	for {
-		m.debug("Watching %v ...", m.key)
-		resp, err = watcher.Next(m.ctx)
-		if err != nil {
+		resp, err := m.kapi.Set(m.ctx, m.key, m.id, setOptions)
+		if err == nil {
+			m.debug("Create node %v OK [%q]", m.key, resp)
+			return nil
+		}
+		m.debug("Create node %v failed [%v]", m.key, err)
+		e, ok := err.(client.Error)
+		if !ok {
 			return err
 		}
 
-		m.debug("Received an event : %q", resp)
-		if resp.Action == deleteAction || resp.Action == expireAction {
-			return nil
+		if e.Code != client.ErrorCodeNodeExist {
+			return err
+		}
+
+		// Get the already node's value.
+		resp, err = m.kapi.Get(m.ctx, m.key, nil)
+		if err != nil {
+			return err
+		}
+		m.debug("Get node %v OK", m.key)
+		watcherOptions := &client.WatcherOptions{
+			AfterIndex : resp.Index,
+			Recursive:false,
+		}
+		watcher := m.kapi.Watcher(m.key, watcherOptions)
+		for {
+			m.debug("Watching %v ...", m.key)
+			resp, err = watcher.Next(m.ctx)
+			if err != nil {
+				return err
+			}
+
+			m.debug("Received an event : %q", resp)
+			if resp.Action == deleteAction || resp.Action == expireAction {
+				// break this for-loop, and try to create the node again.
+				break
+			}
 		}
 	}
-
+	return err
 }
 
 // Unlock unlocks m.
