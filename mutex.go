@@ -79,7 +79,8 @@ func New(key string, ttl int, machines []string) *Mutex {
 func (m *Mutex) Lock() (err error) {
 	m.mutex.Lock()
 	for try := 1; try <= defaultTry; try++ {
-		if m.lock() == nil {
+		err = m.lock()
+		if err == nil {
 			return nil
 		}
 		
