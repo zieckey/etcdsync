@@ -1,14 +1,13 @@
 package etcdsync
 
 import (
-	"testing"
 	"log"
+	"testing"
 	"time"
 
 	"github.com/coreos/etcd/client"
 	"golang.org/x/net/context"
 )
-
 
 func newKeysAPI(machines []string) client.KeysAPI {
 	cfg := client.Config{
@@ -35,7 +34,7 @@ func checkKeyExists(key string, kapi client.KeysAPI) bool {
 }
 
 func TestMutex(t *testing.T) {
-	log.SetFlags(log.Ltime|log.Ldate|log.Lshortfile)
+	log.SetFlags(log.Ltime | log.Ldate | log.Lshortfile)
 	lockKey := "/etcdsync"
 	machines := []string{"http://127.0.0.1:2379"}
 	kapi := newKeysAPI(machines)
@@ -66,7 +65,6 @@ func TestMutex(t *testing.T) {
 		t.Errorf("ERROR %v", err)
 	}
 }
-
 
 func TestLockConcurrently(t *testing.T) {
 	slice := make([]int, 0, 3)
@@ -143,4 +141,22 @@ func TestLockTimeout(t *testing.T) {
 	}
 }
 
-
+func TestRefreshLockTTL(t *testing.T) {
+	lockKey := "/etcd_sync"
+	machines := []string{"http://127.0.0.1:2379"}
+	kapi := newKeysAPI(machines)
+	m := New(lockKey, 10, machines)
+	m.Lock()
+	if checkKeyExists(lockKey, kapi) == false {
+		t.Errorf("The mutex have been refreshed but the key node does not exists.")
+		t.Fail()
+	}
+	time.Sleep(5 * time.Second)
+	m.RefreshLockTTL(10 * time.Second)
+	time.Sleep(5 * time.Second)
+	if checkKeyExists(lockKey, kapi) == false {
+		t.Errorf("The mutex's TTL has been refreshed but the key node still expired.")
+		t.Fail()
+	}
+	m.Unlock()
+}
