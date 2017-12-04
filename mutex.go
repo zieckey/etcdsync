@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	defaultTTL = 60
-	defaultTry = 3
+	defaultTTL   = 60
+	defaultTry   = 3
 	deleteAction = "delete"
 	expireAction = "expire"
 )
@@ -67,8 +67,8 @@ func New(key string, ttl int, machines []string) *Mutex {
 		id:     fmt.Sprintf("%v-%v-%v", hostname, os.Getpid(), time.Now().Format("20060102-15:04:05.999999999")),
 		client: c,
 		kapi:   client.NewKeysAPI(c),
-		ctx: context.TODO(),
-		ttl: time.Second * time.Duration(ttl),
+		ctx:    context.TODO(),
+		ttl:    time.Second * time.Duration(ttl),
 		mutex:  new(sync.Mutex),
 	}
 }
@@ -83,7 +83,7 @@ func (m *Mutex) Lock() (err error) {
 		if err == nil {
 			return nil
 		}
-		
+
 		m.debug("Lock node %v ERROR %v", m.key, err)
 		if try < defaultTry {
 			m.debug("Try to lock node %v again", m.key, err)
@@ -95,8 +95,8 @@ func (m *Mutex) Lock() (err error) {
 func (m *Mutex) lock() (err error) {
 	m.debug("Trying to create a node : key=%v", m.key)
 	setOptions := &client.SetOptions{
-		PrevExist:client.PrevNoExist,
-		TTL:      m.ttl,
+		PrevExist: client.PrevNoExist,
+		TTL:       m.ttl,
 	}
 	for {
 		resp, err := m.kapi.Set(m.ctx, m.key, m.id, setOptions)
@@ -121,8 +121,8 @@ func (m *Mutex) lock() (err error) {
 		}
 		m.debug("Get node %v OK", m.key)
 		watcherOptions := &client.WatcherOptions{
-			AfterIndex : resp.Index,
-			Recursive:false,
+			AfterIndex: resp.Index,
+			Recursive:  false,
 		}
 		watcher := m.kapi.Watcher(m.key, watcherOptions)
 		for {
@@ -166,6 +166,21 @@ func (m *Mutex) Unlock() (err error) {
 	return err
 }
 
+func (m *Mutex) RefreshLockTTL(ttl time.Duration) (err error) {
+	setOptions := &client.SetOptions{
+		PrevExist: client.PrevExist,
+		TTL:       ttl,
+	}
+	resp, err := m.kapi.Set(m.ctx, m.key, m.id, setOptions)
+	if err != nil {
+		m.debug("Refresh ttl of %v failed [%q]", m.key, resp)
+	} else {
+		m.debug("Refresh ttl of %v OK", m.key)
+	}
+
+	return err
+}
+
 func (m *Mutex) debug(format string, v ...interface{}) {
 	if m.logger != nil {
 		m.logger.Write([]byte(m.id))
@@ -178,4 +193,3 @@ func (m *Mutex) debug(format string, v ...interface{}) {
 func (m *Mutex) SetDebugLogger(w io.Writer) {
 	m.logger = w
 }
-
