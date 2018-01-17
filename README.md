@@ -10,13 +10,13 @@ Otherwise this library is very very simple. The usage is simple, the code is sim
 
 ## Import
     
-    go get github.com/zieckey/etcdsync
+    go get -u github.com/zieckey/etcdsync
 
 ## Simplest usage
 
 Steps:
 
-1. m := etcdsync.New()
+1. m, err := etcdsync.New()
 2. m.Lock()
 3. Do your business here
 4. m.Unlock()
@@ -32,11 +32,12 @@ import (
 )
 
 func main() {
-	m := etcdsync.New("/mylock", 10, []string{"http://127.0.0.1:2379"})
-	if m == nil {
+	m, err := etcdsync.New("/mylock", 10, []string{"http://127.0.0.1:2379"})
+	if m == nil || err != nil {
 		log.Printf("etcdsync.New failed")
+		return
 	}
-	err := m.Lock()
+	err = m.Lock()
 	if err != nil {
 		log.Printf("etcdsync.Lock failed")
 	} else {
@@ -57,7 +58,7 @@ func main() {
 
 ## Test
 
-You need a etcd instance running on http://localhost:2379, then:
+You need a `etcd` instance running on http://localhost:2379, then:
 
     go test
     
