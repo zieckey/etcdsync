@@ -3,17 +3,18 @@ package main
 import (
 	"log"
 	"os"
-	
+
 	"github.com/zieckey/etcdsync"
 )
 
 func main() {
-	m := etcdsync.New("/mylock", 10, []string{"http://127.0.0.1:2379"})
-	m.SetDebugLogger(os.Stdout)
-	if m == nil {
+	m, err := etcdsync.New("/mylock", 10, []string{"http://127.0.0.1:2379"})
+	if m == nil || err != nil {
 		log.Printf("etcdsync.New failed")
+		return
 	}
-	err := m.Lock()
+	m.SetDebugLogger(os.Stdout)
+	err = m.Lock()
 	if err != nil {
 		log.Printf("etcdsync.Lock failed")
 	} else {

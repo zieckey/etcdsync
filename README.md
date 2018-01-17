@@ -58,6 +58,8 @@ func main() {
 
 ## Test
 
+`etcd2` or `etcd3` test OK.
+
 You need a `etcd` instance running on http://localhost:2379, then:
 
     go test
