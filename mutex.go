@@ -1,7 +1,6 @@
 package etcdsync
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -34,7 +33,7 @@ type Mutex struct {
 // New creates a Mutex with the given key which must be the same
 // across the cluster nodes.
 // machines are the ectd cluster addresses
-func New(key string, ttl int, machines []string) (*Mutex, error) {
+func New(key string, ttl int, machines []string) *Mutex {
 	cfg := client.Config{
 		Endpoints:               machines,
 		Transport:               client.DefaultTransport,
@@ -43,16 +42,16 @@ func New(key string, ttl int, machines []string) (*Mutex, error) {
 
 	c, err := client.New(cfg)
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	hostname, err := os.Hostname()
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	if len(key) == 0 || len(machines) == 0 {
-		return nil, errors.New("wrong lock key or empty machines")
+		return nil
 	}
 
 	if key[0] != '/' {
@@ -71,7 +70,7 @@ func New(key string, ttl int, machines []string) (*Mutex, error) {
 		ctx:    context.TODO(),
 		ttl:    time.Second * time.Duration(ttl),
 		mutex:  new(sync.Mutex),
-	}, nil
+	}
 }
 
 // Lock locks m.

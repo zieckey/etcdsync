@@ -38,15 +38,11 @@ func TestMutex(t *testing.T) {
 	lockKey := "/etcdsync"
 	machines := []string{"http://127.0.0.1:2379"}
 	kapi := newKeysAPI(machines)
-	m, err := New(lockKey, 60, machines)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	m := New(lockKey, 60, machines)
 	if m == nil {
 		t.Errorf("New Mutex ERROR")
 	}
-	err = m.Lock()
+	err := m.Lock()
 	if err != nil {
 		t.Errorf("failed")
 	}
@@ -75,13 +71,9 @@ func TestLockConcurrently(t *testing.T) {
 	lockKey := "/etcd_sync"
 	machines := []string{"http://127.0.0.1:2379"}
 	kapi := newKeysAPI(machines)
-	m1, err := New(lockKey, 60, machines)
-	m2, err := New(lockKey, 60, machines)
-	m3, err := New(lockKey, 60, machines)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	m1 := New(lockKey, 60, machines)
+	m2 := New(lockKey, 60, machines)
+	m3 := New(lockKey, 60, machines)
 	if m1 == nil || m2 == nil || m3 == nil {
 		t.Errorf("New Mutex ERROR")
 	}
@@ -130,12 +122,8 @@ func TestLockConcurrently(t *testing.T) {
 
 func TestLockTimeout(t *testing.T) {
 	slice := make([]int, 0, 2)
-	m1, err := New("key", 2, []string{"http://127.0.0.1:2379"})
-	m2, err := New("key", 2, []string{"http://127.0.0.1:2379"})
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	m1 := New("key", 2, []string{"http://127.0.0.1:2379"})
+	m2 := New("key", 2, []string{"http://127.0.0.1:2379"})
 	m1.Lock()
 	ch := make(chan bool)
 	go func() {
@@ -157,11 +145,7 @@ func TestRefreshLockTTL(t *testing.T) {
 	lockKey := "/etcd_sync"
 	machines := []string{"http://127.0.0.1:2379"}
 	kapi := newKeysAPI(machines)
-	m, err := New(lockKey, 10, machines)
-	if err != nil {
-		t.Error(err)
-		return
-	}
+	m := New(lockKey, 10, machines)
 	m.Lock()
 	if checkKeyExists(lockKey, kapi) == false {
 		t.Errorf("The mutex have been refreshed but the key node does not exists.")
