@@ -1,6 +1,7 @@
 package etcdsync
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -9,7 +10,6 @@ import (
 	"time"
 
 	"github.com/coreos/etcd/client"
-	"golang.org/x/net/context"
 )
 
 const (
