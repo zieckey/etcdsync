@@ -151,20 +151,30 @@ func (m *Mutex) lock() (err error) {
 // arrange for another goroutine to unlock it.
 func (m *Mutex) Unlock() (err error) {
 	defer m.mutex.Unlock()
-	for i := 1; i <= defaultTry; i++ {
-		var resp *client.Response
-		resp, err = m.kapi.Delete(m.ctx, m.key, nil)
-		if err == nil {
-			m.debug("Delete %v OK", m.key)
-			return nil
-		}
-		m.debug("Delete %v falied: %q", m.key, resp)
-		e, ok := err.(client.Error)
-		if ok && e.Code == client.ErrorCodeKeyNotFound {
-			return nil
-		}
+	resp, err := m.kapi.Get(m.ctx, m.key, nil)
+	if err != nil {
+		return err
 	}
-	return err
+
+	if resp.Node.Value == m.id {
+		for i := 1; i <= defaultTry; i++ {
+			var resp *client.Response
+			resp, err = m.kapi.Delete(m.ctx, m.key, nil)
+			if err == nil {
+				m.debug("Delete %v OK", m.key)
+				return nil
+			}
+			m.debug("Delete %v falied: %q", m.key, resp)
+			e, ok := err.(client.Error)
+			if ok && e.Code == client.ErrorCodeKeyNotFound {
+				return nil
+			}
+		}
+
+		return err
+	}
+	
+	return errors.New("lock timeout")
 }
 
 func (m *Mutex) RefreshLockTTL(ttl time.Duration) (err error) {
